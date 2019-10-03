@@ -13,11 +13,11 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 export PREFIX=myGameBackend
 
 # Variables for setting up the virtual machine scale set autoscaler
-export VMSSNAME=%PREFIX%VMSS
+export VMSSNAME=${PREFIX}VMSS
 export VMSSVMTOCREATE=2
 export VMSSAUTOSCALERNAME=${PREFIX}Autoscaler
 export VMSSAUTOSCALERCRITERIA=Percentage CPU

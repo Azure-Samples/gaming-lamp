@@ -11,13 +11,18 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 
 # Variables for creating the storage account and the container
 export RANDOMNUMBER=`head -200 /dev/urandom | cksum | cut -f2 -d " "`
-export STORAGENAME=mygamebackendstrg${RANDOMNUMBER}
+export STORAGENAME=${PREFIX}STRG
+export STORAGENAMELOWER=${STORAGENAME,,}
+export STORAGENAMEUNIQUE=${STORAGENAMELOWER}${RANDOMNUMBER}
 export STORAGESKU=Standard_LRS
-export STORAGECONTAINERNAME=${STORAGENAME}cntnr
+export STORAGECONTAINERNAME=${STORAGENAMELOWER}cntnr
+export STORAGESUBNETNAME=${STORAGENAME}+'Subnet'
+export STORAGESUBNETADDRESSPREFIX='10.0.3.0/24'
+export STORAGERULENAME=${STORAGENAME}+'Rule'
 #############################################################################################
 
 # Connect to Azure
@@ -30,7 +35,7 @@ az account set \
 echo Creating a storage account named $STORAGENAME
 az storage account create \
  --resource-group $RESOURCEGROUPNAME% \
- --name $STORAGENAME \
+ --name $STORAGENAMEUNIQUE \
  --sku $STORAGESKU \
  --location $REGIONNAME
 
@@ -52,4 +57,4 @@ az network vnet subnet create \
 
 echo Adding a network rule for a virtual network and subnet
 $STORAGESUBNETID=`az network vnet subnet show --resource-group $RESOURCEGROUPNAME --vnet-name $VNETNAME --name $STORAGESUBNETNAME --query id --output tsv`
-az storage account network-rule add --resource-group $RESOURCEGROUPNAME --account-name $STORAGENAME --subnet $STORAGESUBNETID
+az storage account network-rule add --resource-group $RESOURCEGROUPNAME --account-name $STORAGENAMEUNIQUE --subnet $STORAGESUBNETID

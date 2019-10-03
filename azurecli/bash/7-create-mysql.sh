@@ -12,12 +12,17 @@
 
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 export LOGINUSERNAME=azureuser
 export PREFIX=myGameBackend
 
+export VNETNAME=${PREFIX}VNET
+
 # Variables for setting up the MySQL database
+export RANDOMNUMBER=`head -200 /dev/urandom | cksum | cut -f2 -d " "`
 export MYSQLNAME=${PREFIX}MySQL
+export MYSQLNAMELOWER=${MYSQLNAME,,}
+export MYSQLNAMEUNIQUE=${MYSQLNAMELOWER}${RANDOMNUMBER}
 export MYSQLUSERNAME=azuremysqluser
 export MYSQLPASSWORD=CHang3thisP4Ssw0rD
 export MYSQLDBNAME=gamedb
@@ -26,8 +31,8 @@ export MYSQLGEOREDUNDANTBACKUP=Disabled
 export MYSQLSKU=GP_Gen5_2
 export MYSQLSTORAGEMBSIZE=51200
 export MYSQLVERSION=5.7
-export MYSQLREADREPLICANAME=${MYSQLNAME}Replica
-export MYSQLREADREPLICAREGION=japaneast
+export MYSQLREADREPLICANAME=${MYSQLNAMEUNIQUE}Replica
+export MYSQLREADREPLICAREGION=westus
 export MYSQLSUBNETNAME=${MYSQLNAME}Subnet
 export MYSQLSUBNETADDRESSPREFIX=10.0.2.0/24
 export MYSQLRULENAME=${MYSQLNAME}Rule
@@ -40,13 +45,13 @@ az login
 az account set \
  --subscription $YOURSUBSCRIPTIONID
 
-# Enable Azure CLI db-up extension (in preview)
+# Enable Azure CLI db-up extension (in preview, requires admin)
 az extension add --name db-up
 
 echo In addition to creating the server, the az mysql up command creates a sample database, a root user in the database, opens the firewall for Azure services, and creates default firewall rules for the client computer
-az mysql up ^
+az mysql up \
  --resource-group $RESOURCEGROUPNAME \
- --server-name $MYSQLNAME \
+ --server-name $MYSQLNAMEUNIQUE \
  --admin-user $MYSQLUSERNAME \
  --admin-password $MYSQLPASSWORD \
  --backup-retention $MYSQLBACKUPRETAINEDDAYS \
@@ -68,12 +73,12 @@ az network vnet subnet create \
 echo Creating a Virtual Network rule on the MySQL server to secure it to the subnet
 az mysql server vnet-rule create \
  --resource-group $RESOURCEGROUPNAME \
- --server-name $MYSQLNAME \
+ --server-name $MYSQLNAMEUNIQUE \
  --vnet-name $VNETNAME \
  --subnet $MYSQLSUBNETNAME \
  --name $MYSQLRULENAME
 
-echo creating a read replica named $MYSQLREADREPLICANAME in the region $MYSQLREADREPLICAREGION using $MYSQLNAME as a source (master)
+echo creating a read replica named $MYSQLREADREPLICANAME in the region $MYSQLREADREPLICAREGION using $MYSQLNAME as a source - master
 az mysql server replica create \
  --resource-group $RESOURCEGROUPNAME \
  --name $MYSQLREADREPLICANAME \

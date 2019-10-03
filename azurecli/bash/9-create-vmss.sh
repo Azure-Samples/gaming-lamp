@@ -12,14 +12,14 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 export LOGINUSERNAME=azureuser
 #export LOGINPASSWORD=N0tReCoMM3ND3DUseSSH
 export PREFIX=myGameBackend
 
 # Variables for referencing the networking resources (load balancer, etc) needed to create the scale set
 export LBNAME=${PREFIX}LB
-export LBSKU=Standard
+export LBSKU=Basic
 export VNETNAME=${PREFIX}VNET
 export SUBNETNAME=${PREFIX}Subnet
 export LBBEPOOLNAME=${LBNAME}BEPool
@@ -31,7 +31,7 @@ export VMSSNAME=${PREFIX}VMSS
 export GOLDENIMAGENAME=myGoldenImage
 export VMSSSKUSIZE=Standard_B1s
 export VMSSVMTOCREATE=2
-export VMSSSTORAGETYPE=Premium_LRS
+export VMSSSTORAGESKU=Premium_LRS
 export VMSSACELERATEDNETWORKING=false
 export VMSSUPGRADEPOLICY=Manual
 export HEALTHPROBEID=/subscriptions/${YOURSUBSCRIPTIONID}/resourceGroups/${RESOURCEGROUPNAME}/providers/Microsoft.Network/loadBalancers/${LBNAME}/probes/http
@@ -58,7 +58,7 @@ az vmss create \
  --admin-username $LOGINUSERNAME \
  --instance-count $VMSSVMTOCREATE \
  --backend-pool-name $LBBEPOOLNAME \
- --storage-sku $VMSSSTORAGETYPE \
+ --storage-sku $VMSSSTORAGESKU \
  --vm-sku $VMSSSKUSIZE \
  --lb-nat-pool-name $LBNATPOOLNAME \
  --accelerated-networking $VMSSACELERATEDNETWORKING \

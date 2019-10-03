@@ -13,15 +13,15 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 export PREFIX=myGameBackend
 
 # Variables for setting up the redis cache
 export RANDOMNUMBER=`head -200 /dev/urandom | cksum | cut -f2 -d " "`
 export REDISNAME=${PREFIX}Redis
 export REDISNAMEUNIQUE=${REDISNAME}${RANDOMNUMBER}
-export REDISVMSIZE=P1
-export REDISSKU=Premium
+export REDISVMSIZE=C1
+export REDISSKU=Standard
 export REDISSHARDSTOCREATE=2
 export VNETNAME=${PREFIX}VNET
 export REDISSUBNETNAME=${REDISNAME}Subnet
@@ -45,26 +45,24 @@ az network vnet subnet create \
  --address-prefixes $REDISSUBNETADDRESSPREFIX
 fi
 
-if [ "$REDISSKU" = "Premium" ]; then
-echo Creating a $REDISSKU $REDISVMSIZE Redis Cache named $REDISNAMEUNIQUE with $REDISSHARDSTOCREATE shards within the subnet $SUBNETID
+if [ "$REDISSKU" = "Standard" ]; then
 az redis create \
- --resource-group $RESOURCEGROUPNAME \
- --name $REDISNAMEUNIQUE \
- --location $REGIONNAME \
- --sku $REDISSKU \
- --vm-size $REDISVMSIZE \
- --shard-count $REDISSHARDSTOCREATE \
- --subnet-id $SUBNETID
+--resource-group $RESOURCEGROUPNAME \
+--name $REDISNAMEUNIQUE \
+--location $REGIONNAME \
+--sku $REDISSKU \
+--vm-size $REDISVMSIZE /
 fi
 
-if [ "$REDISSKU" = "Standard" ]; then
-echo Creating a $REDISSKU $REDISVMSIZE Redis Cache named $REDISNAMEUNIQUE
+if [ "$REDISSKU" = "Premium" ]; then
 az redis create \
- --resource-group $RESOURCEGROUPNAME \
- --name $REDISNAMEUNIQUE \
- --location $REGIONNAME \
- --sku $REDISSKU \
- --vm-size $REDISVMSIZE
+--resource-group $RESOURCEGROUPNAME \
+--name $REDISNAMEUNIQUE \
+--location $REGIONNAME \
+--sku $REDISSKU \
+--vm-size $REDISVMSIZE \
+--shard-count $REDISSHARDSTOCREATE \
+--subnet-id $SUBNETID /
 fi
 
 if [ "$REDISSKU" = "Basic" ]; then
@@ -74,10 +72,10 @@ az redis create \
  --name $REDISNAMEUNIQUE \
  --location $REGIONNAME \
  --sku $REDISSKU \
- --vm-size $REDISVMSIZE
+ --vm-size $REDISVMSIZE /
 fi
 
-echo Showing details of the cache named $RESOURCEGROUPNAME (hostName, enableNonSslPort, port, sslPort, primaryKey and secondaryKey)
+echo Showing details of the cache named $RESOURCEGROUPNAME - hostName, enableNonSslPort, port, sslPort, primaryKey and secondaryKey
 az redis show \
  --resource-group $RESOURCEGROUPNAME \
  --name $REDISNAMEUNIQUE \

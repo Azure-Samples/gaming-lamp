@@ -13,14 +13,14 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 
 # Variables for creating the golden image
 export VMNAME=myVirtualMachine
 export GOLDENIMAGENAME=myGoldenImage
-REM #############################################################################################
+#############################################################################################
 
-REM #############################################################################################
+#############################################################################################
 
 # Connect to Azure
 az login

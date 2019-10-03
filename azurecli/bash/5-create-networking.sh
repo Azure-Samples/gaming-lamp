@@ -13,7 +13,7 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 export PREFIX=myGameBackend
 
 # Variables for creating the networking resources (load balancer, etc)
@@ -38,7 +38,7 @@ export LBRULEHTTPSNAME=${LBNAME}HTTPSRule
 #############################################################################################
 
 # Connect to Azure
-az login
+#az login
 
 # Set the Azure subscription
 az account set \
@@ -79,7 +79,7 @@ az network lb probe create \
  --path /
 
 if [ "$LBSKU" = "Standard" ]; then
-echo Creating the load balancer health probe for HTTPs (Standard Load Balancer SKU only)
+echo Creating the load balancer health probe for HTTPs - Standard Load Balancer SKU only
 az network lb probe create \
  --resource-group $RESOURCEGROUPNAME \
  --lb-name $LBNAME \
@@ -113,7 +113,7 @@ az network lb rule create \
  --backend-pool-name $LBBEPOOLNAME
 
 if [ "$LBSKU" = "Standard" ]; then
-echo Creating a load balancing inbound rule for the port 443 (Standard Load Balancer SKU only)
+echo Creating a load balancing inbound rule for the port 443 - Standard Load Balancer SKU only
 az network lb rule create \
  --resource-group $RESOURCEGROUPNAME \
  --name $LBRULEHTTPSNAME \

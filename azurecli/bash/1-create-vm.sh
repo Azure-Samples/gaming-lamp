@@ -2,7 +2,7 @@
 #############################################################################################
 # Ensure you have logged in to Azure with your credentials prior to running this script
 # az login
-
+#
 # Ensure that you have the Azure subscription ID, it should show up after you have logged in and it has the format:
 # "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 #############################################################################################
@@ -10,10 +10,9 @@
 #############################################################################################
 # General variables used in the different Azure CLI commands run from this script
 
-#export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-export YOURSUBSCRIPTIONID=4079abbe-ef74-4c5d-81d8-f3d2d297a2db
+export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 export LOGINUSERNAME=azureuser
 #export LOGINPASSWORD=N0tReCoMM3ND3DUseSSH
 
@@ -34,7 +33,7 @@ az account set \
  --subscription $YOURSUBSCRIPTIONID
 
 # Create a resource group
-echo Creating resource group named $RESOURCEGROUPNAME in region $REGIONNAME
+echo Creating a resource group named $RESOURCEGROUPNAME in the region $REGIONNAME
 az group create \
  --name $RESOURCEGROUPNAME \
  --location $REGIONNAME

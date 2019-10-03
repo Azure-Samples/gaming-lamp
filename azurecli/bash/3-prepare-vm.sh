@@ -13,7 +13,7 @@
 # General variables used in the different Azure CLI commands run from this script
 export YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 export RESOURCEGROUPNAME=myResourceGroup
-export REGIONNAME=japaneast
+export REGIONNAME=japanwest
 
 # Variables for preparing the Virtual Machine
 export VMNAME=myVirtualMachine
@@ -28,11 +28,13 @@ az login
 az account set \
  --subscription $YOURSUBSCRIPTIONID
 
+# Stop and deallocate
 echo Stopping and deallocating the virtual machine named $VMNAME
 az vm deallocate \
  --resource-group $RESOURCEGROUPNAME \
  --name $VMNAME
 
+# Generalize
 echo Generalizing the virtual machine named $VMNAME
 az vm generalize \
  --resource-group $RESOURCEGROUPNAME \
