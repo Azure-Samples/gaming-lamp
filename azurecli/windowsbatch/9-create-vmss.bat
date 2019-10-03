@@ -20,7 +20,7 @@ SET PREFIX=myGameBackend
 
 REM # Variables for referencing the networking resources (load balancer, etc) needed to create the scale set
 SET LBNAME=%PREFIX%LB
-SET LBSKU=Standard
+SET LBSKU=Basic
 SET VNETNAME=%PREFIX%VNET
 SET SUBNETNAME=%PREFIX%Subnet
 SET LBBEPOOLNAME=%LBNAME%BEPool

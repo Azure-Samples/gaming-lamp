@@ -12,11 +12,14 @@ REM # General variables used in the different Azure CLI commands run from this s
 SET YOURSUBSCRIPTIONID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 SET RESOURCEGROUPNAME=myResourceGroup
 SET REGIONNAME=japanwest
+SET PREFIXLOWER=mygamebackend
 
 REM # Variables for creating the storage account and the container
-SET STORAGENAME=mygamebackendstrg%RANDOM%
+SET STORAGENAME=%PREFIX%STRG
+SET STORAGENAMELOWER=%PREFIXLOWER%strg%RANDOM%
+SET STORAGENAMEUNIQUE=%STORAGENAMELOWER%%RANDOM%
 SET STORAGESKU=Standard_LRS
-SET STORAGECONTAINERNAME=%STORAGENAME%cntnr
+SET STORAGECONTAINERNAME=%STORAGENAMELOWER%cntnr
 SET STORAGESUBNETNAME=%STORAGENAME%Subnet
 SET STORAGESUBNETADDRESSPREFIX=10.0.3.0/24
 SET STORAGERULENAME=%STORAGENAME%Rule
@@ -31,16 +34,16 @@ CALL az account set --subscription %YOURSUBSCRIPTIONID%
 ECHO Creating a storage account named %STORAGENAME%
 CALL az storage account create ^
  --resource-group %RESOURCEGROUPNAME% ^
- --name %STORAGENAME% ^
+ --name %STORAGENAMEUNIQUE% ^
  --sku %STORAGESKU% ^
  --location %REGIONNAME%
 
 ECHO Getting the connection string from the storage account
-CALL az storage account show-connection-string -n %STORAGENAME% -g %RESOURCEGROUPNAME% --query connectionString -o tsv > connectionstring.tmp
+CALL az storage account show-connection-string -n %STORAGENAMEUNIQUE% -g %RESOURCEGROUPNAME% --query connectionString -o tsv > connectionstring.tmp
 SET /p STORAGECONNECTIONSTRING=<connectionstring.tmp
 CALL DEL connectionstring.tmp
 
-ECHO Creating a storage container named %STORAGECONTAINERNAME% into the storage account named %STORAGENAME%
+ECHO Creating a storage container named %STORAGECONTAINERNAME% into the storage account named %STORAGENAMEUNIQUE%
 CALL az storage container create ^
  --name %STORAGECONTAINERNAME% ^
  --connection-string %STORAGECONNECTIONSTRING%
@@ -60,5 +63,5 @@ CALL DEL storagesubnetid.tmp
 
 CALL az storage account network-rule add ^
  --resource-group %RESOURCEGROUPNAME% ^
- --account-name %STORAGENAME% ^
+ --account-name %STORAGENAMEUNIQUE% ^
  --subnet %STORAGESUBNETID% ^

@@ -22,6 +22,7 @@ SET SCRIPTUPDATEFILEDESTINATIONAME=update-app.sh
 SET DESTINATIONFOLDER=/var/www/html
 SET SERVICETORESTART=apache2.service
 
+# Change the storage name and container to the ones previously created
 SET STORAGENAME=mygamebackendstrg%RANDOM%
 SET STORAGECONTAINERNAME=%STORAGENAME%cntnr
 

@@ -17,7 +17,7 @@ SET REGIONNAME=japanwest
 SET PREFIX=myGameBackend
 
 REM # Variables for creating the networking resources (load balancer, etc)
-SET LBSKU=Standard
+SET LBSKU=Basic
 SET PUBLICIPNAME=%PREFIX%PublicIP
 SET PUBLICIPALLOCATION=Static
 SET PUBLICIPVERSION=IPv4
