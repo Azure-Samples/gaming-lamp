@@ -32,7 +32,7 @@ az login
 az account set \
  --subscription $YOURSUBSCRIPTIONID
 
-echo Creating a storage account named $STORAGENAME
+echo Creating a storage account named $STORAGENAMEUNIQUE
 az storage account create \
  --resource-group $RESOURCEGROUPNAME% \
  --name $STORAGENAMEUNIQUE \
@@ -40,9 +40,9 @@ az storage account create \
  --location $REGIONNAME
 
 echo Getting the connection string from the storage account
-export STORAGECONNECTIONSTRING=`az storage account show-connection-string -n $STORAGENAME -g $RESOURCEGROUPNAME --query connectionString -o tsv`
+export STORAGECONNECTIONSTRING=`az storage account show-connection-string -n $STORAGENAMEUNIQUE -g $RESOURCEGROUPNAME --query connectionString -o tsv`
 
-echo Creating a storage container named $STORAGECONTAINERNAME into the storage account named $STORAGENAME
+echo Creating a storage container named $STORAGECONTAINERNAME into the storage account named $STORAGENAMEUNIQUE
 az storage container create \
  --name $STORAGECONTAINERNAME \
  --connection-string $STORAGECONNECTIONSTRING
