@@ -1,0 +1,142 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "location": {
+          "type": "string",
+          "defaultValue": "[resourceGroup().location]",
+          "metadata": {
+              "description": "Specifies the location in which the Azure Storage resources should be deployed."
+          }
+      },
+      "prefix": {
+          "type": "string",
+          "metadata": {
+              "description": "The string that will precede all the Azure services for future identification purposes. Prefix must only contain lowercase letters, numbers, and hyphens."
+          }
+      },
+      "accountKind": {
+          "type": "string",
+          "allowedValues": [
+              "StorageV2",
+              "Storage",
+              "BlobStorage"
+          ],
+          "defaultValue": "StorageV2",
+          "metadata": {
+              "description": "General purpose storage accounts (StorageV2 and Storage) provide storage for blobs, files, tables, and queues in a unified account. Blob storage accounts are specialized for storing blob data."
+          }
+      },
+      "storageSKU": {
+          "type": "string",
+          "defaultValue": "Standard_LRS",
+          "metadata": {
+              "description": "The storage SKU to setup, either standard or premium."
+          }
+      },
+      "accessTier": {
+          "type": "string",
+          "allowedValues": [
+              "Cool",
+              "Hot"
+          ],
+          "defaultValue": "Hot",
+          "metadata": {
+              "description": "The account Access Tier is the default tier that is inferred by any blob without an explicitly set tier. The Hot Access Tier is ideal for frequently accessed data, and the Cool Access Tier is ideal for infrequently accessed data. The Archive Access Tier can only be set at the blob level and not on the account."
+          }
+      },
+      "storageSubnetAddressPrefix": {
+          "type": "string",
+          "defaultValue": "10.0.3.0/24",
+          "metadata": {
+              "description": "Storage Subnet Address Prefix"
+          }
+      }
+  },
+  "variables": {
+      "storageAccountsApiVersion": "2019-04-01",
+      "storageContainersApiVersion": "2019-04-01",
+      "subnetApiVersion": "2019-04-01",
+      "storageName": "[concat(parameters('prefix'), 'STRG')]",
+      "storageNameLower": "[toLower(variables('storageName'))]",
+      "storageNameUnique": "[concat(variables('storageNameLower'), substring(uniqueString(resourceGroup().id),0,4))]",
+      "storageContainerName": "[concat(variables('storageNameLower'), 'cntnr')]",
+      "virtualNetworkName": "[concat(parameters('prefix'), 'VNET')]",
+      "storageSubnetName": "[concat(variables('storageName'), 'Subnet')]",
+      "storageSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('storageSubnetName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-007f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-08-Create-Storage.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+          }
+    },
+      {
+          "type": "Microsoft.Network/virtualNetworks/subnets",
+          "apiVersion": "[variables('subnetApiVersion')]",
+          "name": "[concat(variables('virtualNetworkName'), '/', variables('storageSubnetName'))]",
+          "location": "[parameters('location')]",
+          "properties": {
+              "addressPrefix": "[parameters('storageSubnetAddressPrefix')]",
+              "serviceEndpoints": [
+                  {
+                      "service": "Microsoft.Storage"
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.Storage/storageAccounts",
+          "apiVersion": "[variables('storageAccountsApiVersion')]",
+          "name": "[variables('storageNameUnique')]",
+          "location": "[parameters('location')]",
+          "kind": "[parameters('accountKind')]",
+          "sku": {
+              "name": "[parameters('storageSKU')]"
+          },
+          "properties": {
+              "accessTier": "[parameters('accessTier')]",
+              "networkAcls": {
+                  "bypass": "None",
+                  "virtualNetworkRules": [
+                      {
+                          "id": "[variables('storageSubnetId')]",
+                          "action": "Allow"
+                      }
+                  ],
+                  "defaultAction": "Deny"
+              }
+          },
+          "dependsOn": [
+              "[variables('storageSubnetName')]"
+          ],
+          "resources": [
+              {
+                  "type": "blobServices/containers",
+                  "apiVersion": "[variables('storageContainersApiVersion')]",
+                  "name": "[concat('default/', variables('storageContainerName'))]",
+                  "properties": {
+                  },
+                  "dependsOn": [
+                      "[variables('storageNameUnique')]"
+                  ]
+              }
+          ]
+      }
+  ],
+  "outputs": {
+      "storageAccountConnectionString": {  
+          "type": "string",  
+          "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageNameUnique'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageNameUnique')), variables('storageAccountsApiVersion')).keys[0].value, ';EndpointSuffix=core.windows.net')]"  
+      }
+  }
+}

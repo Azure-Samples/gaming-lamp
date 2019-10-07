@@ -1,0 +1,102 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "prefix": {
+          "type": "string",
+          "metadata": {
+              "description": "The string that will precede all the Azure services for future identification purposes."
+          }
+      },
+      "sourceURL": {
+          "type": "string",
+          "metadata": {
+              "description": "The URL of the uploaded files without '/' at the end."
+          }
+      },
+      "blobSourceURI": {
+          "type": "string",
+          "defaultValue": "/app/package.tar.gz",
+          "metadata": {
+              "description": "The path to the compressed file (TAR GZIP) containing the PHP files."
+          }
+      },
+      "blobFileDestinationName": {
+          "type": "string",
+          "defaultValue": "package.tar.gz",
+          "metadata": {
+              "description": "The filename of the compressed file in the destination."
+          }
+      },
+      "scriptUpdateSourceURI": {
+          "type": "string",
+          "defaultValue": "/scripts/update-app.sh",
+          "metadata": {
+              "description": "The path to the bash script that will decompress the PHP file remotely."
+          }
+      },
+      "scriptUpdateFileDestinationName": {
+          "type": "string",
+          "defaultValue": "update-app.sh",
+          "metadata": {
+              "description": "The filename of the update script file in the destination."
+          }
+      },
+      "destinationFolder": {
+          "type": "string",
+          "defaultValue": "/var/www/html",
+          "metadata": {
+              "description": "Directory where the PHP files will be decompressed into."
+          }
+      },
+      "serviceToRestart": {
+          "type": "string",
+          "defaultValue": "apache2.service",
+          "metadata": {
+              "description": "Service to restart after the PHP files are decompressed."
+          }
+      }
+  },
+  "variables": {
+      "vmssName": "[concat(parameters('prefix'),'VMSS')]",
+      "extensionsApiVersion": "2019-03-01"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-011f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-12-Update-App.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+      {
+          "type": "Microsoft.Compute/virtualMachineScaleSets/extensions",
+          "name": "[concat(variables('vmssName'),'/', 'UpdateApp')]",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "[variables('extensionsApiVersion')]",
+          "properties": {
+              "publisher": "Microsoft.Azure.Extensions",
+              "type": "CustomScript",
+              "typeHandlerVersion": "2.0",
+              "autoUpgradeMinorVersion": true,
+              "settings": {
+                  "timestamp":123456789          
+              },
+              "protectedSettings": {
+                  "commandToExecute": "[concat('bash ', parameters('scriptUpdateFileDestinationName'), ' ', parameters('blobFileDestinationName'), ' ', parameters('destinationFolder'), ' ', parameters('serviceToRestart'))]",
+                  "fileUris":[
+                      "[concat(parameters('sourceURL'), parameters('blobSourceUri'))]",
+                      "[concat(parameters('sourceURL'), parameters('scriptUpdateSourceUri'))]"
+                  ]
+              }
+          }
+      }
+  ]
+}

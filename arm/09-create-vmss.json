@@ -1,0 +1,213 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The string that will precede all the Azure services for future identification purposes."
+      },
+      "maxLength": 57
+    },
+    "VMSSSkuSize": {
+      "type": "string",
+      "defaultValue": "Standard_B1s",
+      "metadata": {
+        "description": "The VMSS SKU to setup."
+      }
+    },
+    "VMSSVmToCreate": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "The number of Virtual Machine instances that will be deployed upon creation of the scale set."
+      }
+    },
+    "VMSSStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "metadata": {
+        "description": "The storage SKU to setup, either standard or premium."
+      }
+    },
+    "VMSSAcceleratedNetworking": {
+      "type": "bool",
+      "allowedValues": [
+        true,
+        false
+      ],
+      "defaultValue": false,
+      "metadata": {
+        "description": "VMSS Accelerated Networking."
+      }
+    },
+    "VMSSUpgradePolicy": {
+      "type": "string",
+      "allowedValues": [
+        "Automatic",
+        "Manual",
+        "Rolling"
+      ],
+      "defaultValue": "Manual",
+      "metadata": {
+        "description": "VMSS Upgrade Policy. Manual, Automatic or Rolling."
+      }
+    },
+    "loginUsername": {
+      "type": "string",
+      "defaultValue": "azureuser",
+      "metadata": {
+        "description": "Admin username on all VMs"
+      }
+    },
+    "goldenImageName": {
+      "type": "string",
+      "defaultValue": "myGoldenImage",
+      "metadata": {
+        "description": "The name of the Image that instances of the VM Scale Set will be created from. Images can be created by capturing Azure VMs."
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "sshPublicKey",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SSH Key or password for the Virtual Machine"
+      }
+    }
+  },
+  "variables": {
+    "vmssApiVersion": "2019-03-01",
+    "existingResourceGroup": "[resourceGroup().name]",
+    "vmssName": "[concat(parameters('prefix'), 'VMSS')]",
+    "vnetName": "[concat(parameters('prefix'), 'VNET')]",
+    "subnetName": "[concat(parameters('prefix'), 'Subnet')]",
+    "LBName": "[concat(parameters('prefix'), 'LB')]",
+    "LBBePoolName": "[concat(variables('LBName'), 'BEPool')]",
+    "LBNatPoolName": "[concat(variables('LBName'), 'NATPool')]",
+    "ProbeName": "[concat(variables('LBName'), 'HTTPProbe')]",
+    "nicName": "[concat(variables('vmssName'), '-nic')]",
+    "ipConfigName": "[concat(variables('vmssName'), '-ipconfig')]",
+    "managedImageId": "[resourceId(variables('existingResourceGroup'), 'Microsoft.Compute/images', parameters('goldenImageName'))]",
+    "linuxConfiguration": {
+      "disablePasswordAuthentication": "[variables('authenticationTypeMap')[parameters('authenticationType')].disablePassword]",
+      "ssh": {
+        "publicKeys": [
+          {
+            "path": "[concat('/home/', parameters('loginUsername'), '/.ssh/authorized_keys')]",
+            "keyData": "[parameters('adminPasswordOrKey')]"
+          }
+        ]
+      }
+    },
+    "authenticationTypeMap": {
+      "sshPublicKey": {
+        "disablePassword": true
+      },
+      "password": {
+        "disablePassword": false
+      }
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-008f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-09-Create-VMSS.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+          }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachineScaleSets",
+      "apiVersion": "[variables('vmssApiVersion')]",
+      "name": "[variables('vmssName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('VMSSSkuSize')]",
+        "capacity": "[parameters('VMSSVmToCreate')]"
+      },
+      "properties": {
+        "overprovision": false,
+        "upgradePolicy": {
+          "mode": "[parameters('VMSSUpgradePolicy')]"
+        },
+        "virtualMachineProfile": {
+          "storageProfile": {
+            "osDisk": {
+              "createOption": "FromImage",
+              "managedDisk": {
+                "storageAccountType": "[parameters('VMSSStorageType')]"
+              }
+            },
+            "imageReference": {
+              "id": "[variables('managedImageId')]"
+            }
+          },
+          "osProfile": {
+            "computerNamePrefix": "[variables('vmssName')]",
+            "adminUsername": "[parameters('loginUsername')]",
+            "adminPassword": "[parameters('adminPasswordOrKey')]",
+            "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
+          },
+          "networkProfile": {
+            "networkInterfaceConfigurations": [
+              {
+                "name": "[variables('nicName')]",
+                "properties": {
+                  "primary": true,
+                  "enableAcceleratedNetworking": "[parameters('VMSSAcceleratedNetworking')]",
+                  "ipConfigurations": [
+                    {
+                      "name": "[variables('ipConfigName')]",
+                      "properties": {
+                        "subnet": {
+                            "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '/subnets/', variables('subnetName'))]"
+                        },
+                        "loadBalancerBackendAddressPools": [
+                          {
+                            "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/', variables('existingResourceGroup'), '/providers/Microsoft.Network/loadBalancers/', variables('LBName'), '/backendAddressPools/', variables('LBBePoolName'))]"
+                          }
+                        ],
+                        "loadBalancerInboundNatPools": [
+                          {
+                            "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/', variables('existingResourceGroup'), '/providers/Microsoft.Network/loadBalancers/', variables('LBName'), '/inboundNatPools/', variables('LBNatPoolName'))]"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ],
+            "healthProbe" : {
+              "id": "[concat('/subscriptions/', subscription().subscriptionId,'/resourceGroups/', variables('existingResourceGroup'), '/providers/Microsoft.Network/loadBalancers/', variables('LBName'), '/probes/', variables('ProbeName'))]"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

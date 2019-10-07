@@ -1,0 +1,120 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The string that will precede all the Azure services for future identification purposes."
+      },
+      "maxLength": 57
+    }
+  },
+  "variables": {
+    "virtualNetworksApiVersion": "2019-04-01",
+    "ddosPlanApiVersion": "2019-04-01",
+    "deploymentsApiVersion": "2019-05-01",
+    "vnetName": "[concat(parameters('prefix'), 'VNET')]",
+    "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+    "enableDdosProtection": true,
+    "DDOSProtectionName": "[concat(parameters('prefix'), 'DdosPlan')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-010f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-11-Enable-DDoS-Protection.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/ddosProtectionPlans",
+      "apiVersion": "[variables('ddosPlanApiVersion')]",
+      "name": "[variables('DDOSProtectionName')]",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "[variables('deploymentsApiVersion')]",
+      "name": "[concat(variables('vnetName'),'-','ddos')]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": {},
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "[variables('virtualNetworksApiVersion')]",
+              "name": "[variables('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": "[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).addressSpace]",
+                "subnets":[
+                  {
+                    "name":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[0].name]",
+                    "properties":{
+                      "addressPrefix":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[0].properties.addressPrefix]"
+                      }
+                  },
+                  {
+                    "name":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[1].name]",
+                    "properties":{
+                      "addressPrefix":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[1].properties.addressPrefix]"
+                      }
+                  },
+                  {
+                    "name":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[2].name]",
+                    "properties":{
+                      "addressPrefix":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[2].properties.addressPrefix]",
+                      "serviceEndpoints": [
+                        {
+                          "service": "Microsoft.Sql"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[3].name]",
+                    "properties":{
+                      "addressPrefix":"[reference(variables('vnetId'), variables('virtualNetworksApiVersion')).subnets[3].properties.addressPrefix]",
+                      "serviceEndpoints": [
+                        {
+                          "service": "Microsoft.Storage"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "enableDdosProtection": "[variables('enableDdosProtection')]",
+                "ddosProtectionPlan": {
+                  "id": "[concat(resourceId('Microsoft.Network/ddosProtectionPlans', variables('DDOSProtectionName')))]"
+                }
+              }
+            }
+          ],
+          "outputs": {}
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}

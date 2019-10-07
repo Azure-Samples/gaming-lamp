@@ -1,0 +1,279 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+      "location": {
+          "type": "string",
+          "defaultValue": "[resourceGroup().location]",
+          "metadata": {
+              "description": "Location for all resources."
+          }
+      },
+      "prefix": {
+          "type": "string",
+          "metadata": {
+              "description": "The string that will precede all the Azure services for future identification purposes. Prefix must only contain lowercase letters, numbers, and hyphens."
+          }
+      },
+      "mysqlUserName": {
+          "type": "string",
+          "minLength": 1,
+          "defaultValue": "azuremysqluser",
+          "metadata": {
+              "description": "The admin username to connect to the MySQL server."
+          }
+      },
+      "mysqlPassword": {
+          "type": "securestring",
+          "minLength": 8,
+          "defaultValue": "CHang3thisP4Ssw0rD",
+          "metadata": {
+              "description": "The admin password to connect to the MySQL server. Change it for whichever you consider, as robust as possible."
+          }
+      },
+      "mysqlDBName": {
+          "type": "string",
+          "minLength": 1,
+          "defaultValue": "gamedb",
+          "metadata": {
+              "description": "The name of the game database."
+          }
+      },
+      "mysqlBackupRetainedDays": {
+          "type": "int",
+          "maxValue": 35,
+          "defaultValue": 7,
+          "metadata": {
+              "description": "The backup retention period."
+          }            
+      },
+      "mysqlGeoRedundantBackup": {
+          "type": "string",
+          "allowedValues": [
+              "Disabled",
+              "Enabled"
+          ],
+          "defaultValue": "Disabled",
+          "metadata": {
+              "description": "Configuring locally redundant or geo-redundant storage for backup is only allowed during server create. Once the server is provisioned, you cannot change the backup storage redundancy option."
+          }
+      },
+      "mysqlSKU": {
+          "type": "string",
+          "defaultValue": "GP_Gen5_2",
+          "metadata": {
+              "description": "There is a connection limit depending on the SKU type and number of cores."
+          }
+      },
+      "mysqlStorageMBSize": {
+          "type": "int",
+          "maxValue": 4096000,
+          "defaultValue": 51200,
+          "metadata": {
+              "description": "Space and IOPS vary depending on the SKU and allocated storage size."
+          } 
+      },
+      "mysqlReadReplicaRegion": {
+          "type": "string",
+          "defaultValue": "[resourceGroup().location]",
+          "metadata": {
+              "description": "Azure region where the read replica will be deployed."
+          }
+      },        
+      "numberOfReplicas": {
+          "type": "int",
+          "defaultValue": 0,
+          "allowedValues": [0,1,2,3,4,5],
+          "metadata": {
+              "description": "Number of replica instances to be deployed."
+          }
+      },"mysqlVersion": {
+          "type": "string",
+          "allowedValues": [
+              "5.6",
+              "5.7"
+          ],
+          "defaultValue": "5.7",
+          "metadata": {
+              "description": "MySQL version."
+          }
+      },
+      "mysqlSubnetAddressPrefix": {
+          "type": "string",
+          "defaultValue": "10.0.2.0/24",
+          "metadata": {
+              "description": "MySQL Subnet Address Prefix. Note: only supported in General Purpose or Memory Optimized tiers."
+          }
+      }
+  },
+  "variables": {
+      "_artifactsLocation": "https://raw.githubusercontent.com/yountaechung/LAMP/master/",
+      "_artifactsLocationSasToken": "",
+      "subnetApiVersion": "2019-04-01",
+      "mysqlserversApiVersion": "2017-12-01",
+      "mysqldatabasesApiVersion": "2017-12-01",
+      "mysqlvnetrulesApiVersion": "2017-12-01",
+      "mysqlfwrulesApiVersion": "2017-12-01",
+      "deploymentsApiVersion": "2019-05-01",
+      "nestedtemplateMySQLReplica": "[uri(variables('_artifactsLocation'), concat('nested/mysqlReplica.json', variables('_artifactsLocationSasToken')))]",
+      "sourceServerId": "[resourceId('Microsoft.DBforMySQL/servers', variables('mysqlName'))]",
+      "mysqlName": "[concat(parameters('prefix'), 'mysql')]",
+      "virtualNetworkName": "[concat(parameters('prefix'), 'VNET')]",
+      "mysqlSubnetName": "[concat(variables('mysqlName'), 'Subnet')]",
+      "virtualNetworkRuleName": "AllowSubnet",
+      "firewallrules": {
+          "batch": {
+              "rules": [
+                  {
+                      "Name": "rule1",
+                      "StartIpAddress": "0.0.0.0",
+                      "EndIpAddress": "255.255.255.255"
+                  },
+                  {
+                      "Name": "rule2",
+                      "StartIpAddress": "0.0.0.0",
+                      "EndIpAddress": "255.255.255.255"
+                  }
+              ]
+          }
+      },
+      "sku": {
+          "name": "[parameters('mysqlSKU')]",
+          "size": "[parameters('mysqlStorageMBSize')]"
+      }
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-006f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-07-Create-MySQL.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+          }
+    },
+      {
+          "type": "Microsoft.Network/virtualNetworks/subnets",
+          "apiVersion": "[variables('subnetApiVersion')]",
+          "name": "[concat(variables('virtualNetworkName'), '/', variables('mysqlSubnetName'))]",
+          "location": "[parameters('location')]",
+          "properties": {
+              "addressPrefix": "[parameters('mysqlSubnetAddressPrefix')]",
+              "serviceEndpoints": [
+                  {
+                      "service": "Microsoft.Sql"
+                  }
+              ]
+          }
+      },
+      {
+          "type": "Microsoft.DBforMySQL/servers",
+          "apiVersion": "[variables('mysqlserversApiVersion')]",
+          "name": "[variables('mysqlName')]",
+          "location": "[parameters('location')]",
+          "sku": {
+              "name": "[parameters('mysqlSKU')]"
+          },
+          "properties": {
+              "version": "[parameters('mysqlVersion')]",
+              "administratorLogin": "[parameters('mysqlUserName')]",
+              "administratorLoginPassword": "[parameters('mysqlPassword')]",
+              "storageProfile": {
+                  "storageMB": "[parameters('mysqlStorageMBSize')]",
+                  "backupRetentionDays": "[parameters('mysqlBackupRetainedDays')]",
+                  "geoRedundantBackup": "[parameters('mysqlGeoRedundantBackup')]"
+              },
+              "createMode": "Default"
+          },
+          "resources": [
+              {
+                  "type": "Microsoft.DBforMySQL/servers/databases",
+                  "apiVersion": "[variables('mysqldatabasesApiVersion')]",
+                  "name": "[concat(variables('mysqlName'), '/', parameters('mysqlDBName'))]",
+                  "properties": {
+                      "charset": "utf8",
+                      "collation": "utf8_general_ci"
+                  },
+                  "dependsOn": [
+                      "[concat('Microsoft.DBforMySQL/servers/', variables('mysqlName'))]"
+                  ]
+              },
+              {
+                  "type": "virtualNetworkRules",
+                  "apiVersion": "[variables('mysqlvnetrulesApiVersion')]",
+                  "name": "[variables('virtualNetworkRuleName')]",
+                  "properties": {
+                      "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('mysqlSubnetName'))]",
+                      "ignoreMissingVnetServiceEndpoint": false
+                  },
+                  "dependsOn": [
+                      "[variables('mysqlSubnetName')]",
+                      "[concat('Microsoft.DBforMySQL/servers/', variables('mysqlName'))]"
+                  ]
+              }
+          ]
+      },
+  {
+          "type": "Microsoft.DBforMySQL/servers/firewallRules",
+          "apiVersion": "[variables('mysqlfwrulesApiVersion')]",
+          "name": "[concat(variables('mysqlName'),'/',variables('firewallrules').batch.rules[copyIndex()].Name)]",
+          "location": "[parameters('location')]",
+          "dependsOn": [
+              "[concat('Microsoft.DBforMySQL/servers/', variables('mysqlName'))]"
+          ],
+          "copy": {
+              "name": "firewallRulesCopy",
+              "mode": "Serial",
+              "batchSize": 2,
+              "count": "[length(variables('firewallrules').batch.rules)]"
+          },
+          "properties": {
+              "startIpAddress": "[variables('firewallrules').batch.rules[copyIndex()].StartIpAddress]",
+              "endIpAddress": "[variables('firewallrules').batch.rules[copyIndex()].EndIpAddress]"
+          }
+      },
+      {
+          "type": "Microsoft.Resources/deployments",
+          "apiVersion": "[variables('deploymentsApiVersion')]",
+          "name": "MySQLServerReplicas",
+          "condition": "[greater(parameters('numberOfReplicas'),0)]",
+          "dependsOn": [
+              "[concat('Microsoft.DBforMySQL/servers/', variables('mysqlName'))]"
+          ],
+          "properties": {
+              "mode": "Incremental",
+              "templateLink": {
+                  "uri":"[variables('nestedtemplateMySQLReplica')]"
+              },
+              "parameters": {
+                  "sku": {
+                      "value": "[variables('sku')]"
+                  },
+                  "serverName": {
+                      "value": "[concat(variables('mysqlName'),'-replica')]"
+                  },
+                  "location": {
+                      "value": "[parameters('mysqlReadReplicaRegion')]"
+                  },
+                  "numberOfReplicas": {
+                      "value": "[parameters('numberOfReplicas')]"
+                  },
+                  "backupRetentionDays": {
+                      "value": "[parameters('mysqlBackupRetainedDays')]"
+                  },
+                  "geoRedundantBackup": {
+                      "value": "[parameters('mysqlGeoRedundantBackup')]"
+                  },
+                  "sourceServerId": {
+                      "value": "[variables('sourceServerId')]"
+                  }
+              }
+          }
+      }
+  ]
+}

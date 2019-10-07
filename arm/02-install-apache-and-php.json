@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "VMName": {
+      "type": "string",
+      "defaultValue": "myVirtualMachine",
+      "metadata": {
+        "description": "The name of the Virtual Machine to install Apache and PHP."
+      }
+    }
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-002f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-02-Install-Apache-and-PHP.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+          }
+    },
+    { 
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2019-03-01",
+      "name": "[concat(parameters('VMName'),'/config-apache-php')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "displayName": "config-apache-php"
+      },
+      "properties": {
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/yountaechung/LAMP/custom-parameters/nested/lampinstall.sh"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute":  "sudo sh lampinstall.sh"
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

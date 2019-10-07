@@ -1,0 +1,144 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "metadata": {
+        "description": "The string that will precede all the Azure services for future identification purposes."
+      },
+      "maxLength": 57
+    },
+    "VMSSAutoscaleCriteria": {
+      "type": "string",
+      "defaultValue": "Percentage CPU",
+      "metadata": {
+        "description": "The general criteria that will be used to trigger the autoscaler."
+      }
+    },
+    "VMSSAutoscaleMaxCount": {
+      "type": "int",
+      "defaultValue": 10,
+      "metadata": {
+        "description": "The maximum number of Virtual Machines that will be part of the scale set. After that number is reached, the autoscaler won't create more."
+      }
+    },
+    "VMSSAutoscaleMinCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "The minimum number of Virtual Machines that will be part of the scale set. After that number is reached, the autoscaler won't switch off any more. Usually matches VMSSVMTOCREATE."
+      }
+    },
+    "VMSSVmToCreate": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "The number of Virtual Machine instances that will be deployed upon creation of the scale set."
+      }
+    },
+    "VMSSAutoscaleOutIncrease": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "How many new instances will be added to the scale set upon being triggered the scale out request."
+      }
+    },
+    "VMSSAutoscaleInDecrease": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "How many instances will be removed from the scale set upon being triggered the scale in request."
+      }
+    }
+  },
+  "variables": {
+    "autoscalesettingsApiVersion": "2015-04-01",
+    "vmssName": "[concat(parameters('prefix'), 'VMSS')]",
+    "vmssAutoscalerName": "[concat(parameters('prefix'), 'Autoscaler')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-05-10",
+      "name": "pid-877696cf-d5a0-009f-9954-ab370b719474",
+      "comments": "GUID for tracking production pilot deployments intended for Gaming-LAMP-10-Create-Autoscaler.",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+          "mode": "Incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+          }
+    },
+    {
+      "type": "Microsoft.Insights/autoscaleSettings",
+      "apiVersion": "[variables('autoscalesettingsApiVersion')]",
+      "name": "[variables('vmssAutoscalerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "name": "[variables('vmssAutoscalerName')]",
+        "targetResourceUri": "[concat('/subscriptions/',subscription().subscriptionId, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.Compute/virtualMachineScaleSets/', variables('vmssName'))]",
+        "enabled": true,
+        "profiles": [
+          {
+            "name": "CPUProfile1",
+            "capacity": {
+              "minimum": "[parameters('VMSSAutoscaleMinCount')]",
+              "maximum": "[parameters('VMSSAutoscaleMaxCount')]",
+              "default": "[parameters('VMSSVmToCreate')]"
+            },
+            "rules": [
+              {
+                "metricTrigger": {
+                  "metricName": "[parameters('VMSSAutoscaleCriteria')]",
+                  "metricNamespace": "",
+                  "metricResourceUri": "[concat('/subscriptions/',subscription().subscriptionId, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.Compute/virtualMachineScaleSets/', variables('vmssName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": 50
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "[parameters('VMSSAutoscaleOutIncrease')]",
+                  "cooldown": "PT5M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "[parameters('VMSSAutoscaleCriteria')]",
+                  "metricNamespace": "",
+                  "metricResourceUri": "[concat('/subscriptions/',subscription().subscriptionId, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.Compute/virtualMachineScaleSets/', variables('vmssName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "LessThan",
+                  "threshold": 30
+                },
+                "scaleAction": {
+                  "direction": "Decrease",
+                  "type": "ChangeCount",
+                  "value": "[parameters('VMSSAutoscaleInDecrease')]",
+                  "cooldown": "PT5M"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
