@@ -1,4 +1,4 @@
-﻿variable "redisvmfamily" {
+variable "redisvmfamily" {
     type = string
     default = "C"
 }
@@ -11,11 +11,6 @@ variable "redisvmcapacity" {
 variable "redissku" {
     type = string
     default = "Standard"
-}
-
-variable "is_redissku_standard" {
-    type = bool
-    default = true
 }
 
 variable "redisshardstocreate" {
@@ -41,7 +36,7 @@ resource "random_id" "redis" {
 
 # NOTE: the Name used for Redis needs to be globally unique
 resource "azurerm_redis_cache" "standard" {
-  count = var.is_redissku_standard ? 1 : 0
+  count = "${var.redissku == "Standard" ? 1 : 0}"
 
   name                = "${var.prefix}Redis${random_id.redis.hex}"
   location            = "${azurerm_resource_group.main.location}"
@@ -52,7 +47,7 @@ resource "azurerm_redis_cache" "standard" {
 }
 
 resource "azurerm_redis_cache" "premium" {
-  count = var.is_redissku_standard ? 0 : 1
+  count = "${var.redissku == "Premium" ? 1 : 0}"
   
   name                = "${var.prefix}Redis${random_id.redis.hex}"
   location            = "${azurerm_resource_group.main.location}"
